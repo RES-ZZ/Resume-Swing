@@ -5,7 +5,7 @@ import com.resumebuilder.dao.DatabaseConnection;
 
 import java.sql.*;
 
-public class ResumeDAO {
+public class DatabaseConnection {
     public void saveResume(Resume resume) throws SQLException {
         String sql = "INSERT INTO resumes (job_title, first_name, last_name, email, phone, country, city, professional_summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -38,4 +38,10 @@ public class ResumeDAO {
     }
 
     // Add more methods for updating, deleting, and retrieving resumes
+    private static Connection getConnection() throws SQLException {
+        String url = "jdbc:mysql://localhost:3306/your_database_name";
+        String user = "root";
+        String password = "Andarkadu@123";
+        return DriverManager.getConnection(url, user, password);
+    }
 }

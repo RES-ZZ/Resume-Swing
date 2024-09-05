@@ -1,7 +1,7 @@
 package com.resumebuilder.gui;
 
 import com.resumebuilder.model.Resume;
-import com.resumebuilder.dao.ResumeDAO;
+import com.resumebuilder.dao.DatabaseConnection;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -208,7 +208,7 @@ public class MainWindow extends JFrame {
         resume.setCity(textFields.get("City").getText());
         resume.setProfessionalSummary(summaryArea.getText());
 
-        ResumeDAO dao = new ResumeDAO();
+        DatabaseConnection dao = new DatabaseConnection();
         try {
             dao.saveResume(resume);
             JOptionPane.showMessageDialog(this, "Resume saved successfully!");
