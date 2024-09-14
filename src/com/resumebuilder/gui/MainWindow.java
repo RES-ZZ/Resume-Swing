@@ -208,20 +208,18 @@ public class MainWindow extends JFrame {
         resume.setCity(textFields.get("City").getText());
         resume.setProfessionalSummary(summaryArea.getText());
 
-        DatabaseConnection dao = new DatabaseConnection();
-        try {
-            dao.saveResume(resume);
-            JOptionPane.showMessageDialog(this, "Resume saved successfully!");
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error saving resume: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
+	    DatabaseConnection dao = new DatabaseConnection();
+	    try {
+		    dao.saveResume(resume);  // Now throws SQLException
+		    JOptionPane.showMessageDialog(this, "Resume saved successfully!");
+	    } catch (SQLException e) {
+		    JOptionPane.showMessageDialog(this, "Error saving resume: " + e.getMessage());
+		    e.printStackTrace();
+	    }}
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             MainWindow window = new MainWindow();
             window.setVisible(true);
         });
-    }
-}
+    }}
