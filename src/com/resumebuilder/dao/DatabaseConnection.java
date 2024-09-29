@@ -108,13 +108,13 @@ public class DatabaseConnection {
 		return resumes; // Return the list of resume
 
 	}
-	public  void deleteResume(Resume resume) throws SQLException{
-		String sql = "DELETE FROM resume WHERE  id = ?";
-
-		try(Connection connection = DriverManager.getConnection(URL,USER,PASSWORD);
-		PreparedStatement pstmt = connection.prepareStatement(sql)) {
-
+	public void deleteResume(int id) throws SQLException {
+		String sql = "DELETE FROM resume WHERE id = ?";
+		try (Connection connection = getConnection();
+		     PreparedStatement pstmt = connection.prepareStatement(sql)) {
+			pstmt.setInt(1, id);
+			pstmt.executeUpdate();
+			System.out.println("Resume deleted successfully!");
 		}
-
 	}
 }
