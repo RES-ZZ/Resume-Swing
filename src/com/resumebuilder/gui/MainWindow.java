@@ -2,224 +2,211 @@ package com.resumebuilder.gui;
 
 import com.resumebuilder.model.Resume;
 import com.resumebuilder.dao.DatabaseConnection;
-
+import java.awt.Desktop;
+import java.io.File;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileOutputStream;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.pdf.PdfWriter;
+
 public class MainWindow extends JFrame {
-    private JPanel leftPanel;
-    private JPanel rightPanel;
-    private JTabbedPane tabbedPane;
-    private JPanel previewPanel;
+	private JPanel mainPanel;
+	private JPanel inputPanel;
 
-    // Define color scheme
-    private static final Color BACKGROUND_COLOR = new Color(255, 150, 150); // Light red background
-    private static final Color ACCENT_COLOR = new Color(220, 20, 60); // Crimson red
-    private static final Color TEXT_COLOR = new Color(50, 50, 50); // Dark gray text
-    private static final Color INPUT_BACKGROUND = new Color(180, 80, 80); // Darker red for input fields
+	// Define new color scheme
+	private static final Color BACKGROUND_COLOR = new Color(240, 240, 240); // Light gray
+	private static final Color ACCENT_COLOR = new Color(0, 123, 255); // Blue
+	private static final Color TEXT_COLOR = new Color(33, 37, 41); // Dark gray
+	private static final Color INPUT_BACKGROUND = Color.WHITE;
 
-    private Map<String, JTextField> textFields = new HashMap<>();
-    private JTextArea summaryArea;
+	private Map<String, JTextField> textFields = new HashMap<>();
+	private JTextArea summaryArea;
 
-    public MainWindow() {
-        setTitle("Resume Builder");
-        setSize(1200, 800);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
+	public MainWindow() {
+		setTitle("Resume Builder");
+		setSize(800, 600);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
 
-        // Set look and feel
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        // Create main split pane
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane.setBorder(null);
-        splitPane.setDividerSize(1);
-        splitPane.setDividerLocation(600);
-        splitPane.setBackground(BACKGROUND_COLOR);
-        add(splitPane, BorderLayout.CENTER);
+		mainPanel = new JPanel(new BorderLayout());
+		mainPanel.setBackground(BACKGROUND_COLOR);
+		add(mainPanel);
 
-        // Left panel (input forms)
-        leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setBackground(BACKGROUND_COLOR);
-        tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Arial", Font.PLAIN, 14));
-        tabbedPane.setBackground(BACKGROUND_COLOR);
-        tabbedPane.setForeground(TEXT_COLOR);
-        leftPanel.add(tabbedPane, BorderLayout.CENTER);
-        splitPane.setLeftComponent(leftPanel);
+		setupMenuBar();
+		addResumeScorePanel();
 
-        // Right panel (resume preview)
-        rightPanel = new JPanel(new BorderLayout());
-        rightPanel.setBackground(Color.WHITE);
-        previewPanel = new JPanel();
-        previewPanel.setBackground(Color.WHITE);
-        previewPanel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1));
-        rightPanel.add(previewPanel, BorderLayout.CENTER);
-        splitPane.setRightComponent(rightPanel);
+		inputPanel = new JPanel(new BorderLayout());
+		inputPanel.setBackground(BACKGROUND_COLOR);
+		mainPanel.add(new JScrollPane(inputPanel), BorderLayout.CENTER);
 
-        // Set up top menu bar
-        setupMenuBar();
+		addInputFields();
+		addSubmitButton();
+	}
 
-        // Add resume score panel
-        addResumeScorePanel();
+	private void setupMenuBar() {
+		JMenuBar menuBar = new JMenuBar();
+		setJMenuBar(menuBar);
+		// Add menu items as needed
+	}
 
-        // Add tabs and their content
-        addPersonalDetailsTab();
-        addProfessionalSummaryTab();
-    }
+	private void addResumeScorePanel() {
+		JPanel scorePanel = new JPanel();
+		scorePanel.setBackground(BACKGROUND_COLOR);
+		mainPanel.add(scorePanel, BorderLayout.NORTH);
+		// Add score components as needed
+	}
 
-    private void setupMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.setBackground(Color.WHITE);
+	private void addInputFields() {
+		JPanel fieldsPanel = new JPanel(new GridBagLayout());
+		fieldsPanel.setBackground(BACKGROUND_COLOR);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(5, 5, 5, 5);
 
-        JMenu fileMenu = new JMenu("File");
-        fileMenu.setFont(new Font("Arial", Font.PLAIN, 14));
-        fileMenu.setForeground(TEXT_COLOR);
-        menuBar.add(fileMenu);
+		String[] labels = {"Job Title", "First Name", "Last Name", "Email", "Phone", "Country", "City"};
+		int gridy = 0;
 
-        JButton templateButton = new JButton("Select template");
-        styleButton(templateButton);
+		for (String label : labels) {
+			gbc.gridx = 0;
+			gbc.gridy = gridy;
+			JLabel jLabel = new JLabel(label);
+			jLabel.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 14));
+			jLabel.setForeground(TEXT_COLOR);
+			fieldsPanel.add(jLabel, gbc);
 
-        JButton downloadButton = new JButton("Download PDF");
-        styleButton(downloadButton);
-        downloadButton.setBackground(ACCENT_COLOR);
-        downloadButton.setForeground(Color.WHITE);
+			gbc.gridx = 1;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.weightx = 1;
+			JTextField textField = new JTextField(20);
+			textField.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 14));
+			textField.setBackground(INPUT_BACKGROUND);
+			textField.setForeground(TEXT_COLOR);
+			textField.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+			fieldsPanel.add(textField, gbc);
 
-        JButton saveButton = new JButton("Save Resume");
-        styleButton(saveButton);
-        saveButton.addActionListener(e -> saveResume());
+			textFields.put(label, textField);
 
-        menuBar.add(Box.createHorizontalGlue());
-        menuBar.add(templateButton);
-        menuBar.add(Box.createHorizontalStrut(10));
-        menuBar.add(downloadButton);
-        menuBar.add(Box.createHorizontalStrut(10));
-        menuBar.add(saveButton);
+			gridy++;
+		}
 
-        setJMenuBar(menuBar);
-    }
+		gbc.gridx = 0;
+		gbc.gridy = gridy;
+		gbc.gridwidth = 2;
+		JLabel summaryLabel = new JLabel("Professional Summary");
+		summaryLabel.setFont(new java.awt.Font("Arial", java.awt.Font.BOLD, 14));
+		summaryLabel.setForeground(TEXT_COLOR);
+		fieldsPanel.add(summaryLabel, gbc);
 
-    private void styleButton(JButton button) {
-        button.setFont(new Font("Arial", Font.PLAIN, 14));
-        button.setBackground(Color.WHITE);
-        button.setForeground(TEXT_COLOR);
-        button.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-        button.setFocusPainted(false);
-    }
+		gridy++;
+		gbc.gridy = gridy;
+		summaryArea = new JTextArea(10, 30);
+		summaryArea.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 14));
+		summaryArea.setLineWrap(true);
+		summaryArea.setWrapStyleWord(true);
+		summaryArea.setBackground(INPUT_BACKGROUND);
+		summaryArea.setForeground(TEXT_COLOR);
+		summaryArea.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+		fieldsPanel.add(new JScrollPane(summaryArea), gbc);
 
-    private void addResumeScorePanel() {
-        JPanel scorePanel = new JPanel(new BorderLayout());
-        scorePanel.setBackground(BACKGROUND_COLOR);
-        scorePanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+		inputPanel.add(fieldsPanel, BorderLayout.NORTH);
+	}
 
-        JLabel scoreLabel = new JLabel("Your resume score");
-        scoreLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        scoreLabel.setForeground(Color.WHITE);
-        scorePanel.add(scoreLabel, BorderLayout.NORTH);
+	private void addSubmitButton() {
+		JButton submitButton = new JButton("Generate Resume");
+		submitButton.setFont(new java.awt.Font("Arial", java.awt.Font.PLAIN, 14));
+		submitButton.setBackground(ACCENT_COLOR);
+		submitButton.setForeground(Color.WHITE);
+		submitButton.setBorder(BorderFactory.createLineBorder(ACCENT_COLOR));
+		submitButton.setFocusPainted(false);
+		submitButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				generateResume();
+			}
+		});
 
-        JProgressBar scoreBar = new JProgressBar(0, 100);
-        scoreBar.setValue(44);
-        scoreBar.setStringPainted(true);
-        scoreBar.setForeground(ACCENT_COLOR);
-        scoreBar.setBackground(Color.WHITE);
-        scorePanel.add(scoreBar, BorderLayout.CENTER);
+		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		buttonPanel.setBackground(BACKGROUND_COLOR);
+		buttonPanel.add(submitButton);
 
-        JButton addEmploymentButton = new JButton("+ Add employment history");
-        addEmploymentButton.setBackground(Color.WHITE);
-        addEmploymentButton.setForeground(ACCENT_COLOR);
-        addEmploymentButton.setBorder(BorderFactory.createLineBorder(Color.WHITE));
-        scorePanel.add(addEmploymentButton, BorderLayout.SOUTH);
+		inputPanel.add(buttonPanel, BorderLayout.SOUTH);
+	}
 
-        leftPanel.add(scorePanel, BorderLayout.NORTH);
-    }
+	private void generateResume() {
+		Resume resume = new Resume();
+		resume.setJobTitle(textFields.get("Job Title").getText());
+		resume.setFirstName(textFields.get("First Name").getText());
+		resume.setLastName(textFields.get("Last Name").getText());
+		resume.setEmail(textFields.get("Email").getText());
+		resume.setPhone(textFields.get("Phone").getText());
+		resume.setCountry(textFields.get("Country").getText());
+		resume.setCity(textFields.get("City").getText());
+		resume.setProfessionalSummary(summaryArea.getText());
 
-    private void addPersonalDetailsTab() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(BACKGROUND_COLOR);
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(5, 5, 5, 5);
+		DatabaseConnection dao = new DatabaseConnection();
+		try {
+			dao.saveResume(resume);
+			generatePDF(resume);
+			JOptionPane.showMessageDialog(this, "Resume generated, saved to database, and exported as PDF successfully!");
+		} catch (SQLException ex) {
+			JOptionPane.showMessageDialog(this, "Error saving resume to database: " + ex.getMessage());
+			ex.printStackTrace();
+		} catch (Exception ex) {
+			JOptionPane.showMessageDialog(this, "Error generating PDF: " + ex.getMessage());
+			ex.printStackTrace();
+		}
+	}
 
-        String[] labels = {"Job Title", "First Name", "Last Name", "Email", "Phone", "Country", "City"};
-        int gridy = 0;
+	private void generatePDF(Resume resume) throws Exception {
+		Document document = new Document();
+		PdfWriter.getInstance(document, new FileOutputStream("resume.pdf"));
+		document.open();
 
-        for (String label : labels) {
-            gbc.gridx = 0;
-            gbc.gridy = gridy;
-            JLabel jLabel = new JLabel(label);
-            jLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-            jLabel.setForeground(Color.WHITE);
-            panel.add(jLabel, gbc);
+		com.itextpdf.text.Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.BLACK);
+		com.itextpdf.text.Font headingFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
+		com.itextpdf.text.Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.BLACK);
 
-            gbc.gridx = 1;
-            gbc.fill = GridBagConstraints.HORIZONTAL;
-            gbc.weightx = 1;
-            JTextField textField = new JTextField(20);
-            textField.setFont(new Font("Arial", Font.PLAIN, 14));
-            textField.setBackground(INPUT_BACKGROUND);
-            textField.setForeground(Color.WHITE);
-            textField.setBorder(BorderFactory.createLineBorder(INPUT_BACKGROUND));
-            panel.add(textField, gbc);
+		document.add(new Paragraph(resume.getFirstName() + " " + resume.getLastName(), titleFont));
+		document.add(new Paragraph(resume.getJobTitle(), headingFont));
+		document.add(new Paragraph("\n"));
 
-            textFields.put(label, textField);
+		document.add(new Paragraph("Contact Information", headingFont));
+		document.add(new Paragraph("Email: " + resume.getEmail(), normalFont));
+		document.add(new Paragraph("Phone: " + resume.getPhone(), normalFont));
+		document.add(new Paragraph("Location: " + resume.getCity() + ", " + resume.getCountry(), normalFont));
+		document.add(new Paragraph("\n"));
 
-            gridy++;
-        }
+		document.add(new Paragraph("Professional Summary", headingFont));
+		document.add(new Paragraph(resume.getProfessionalSummary(), normalFont));
+		String filePath = System.getProperty("user.dir") + "/resume.pdf";
+		document.close();
+		JOptionPane.showMessageDialog(null, "PDF created successfully!\nFile saved at: " + filePath);
+		document.close();
+	}
 
-        tabbedPane.addTab("Personal Details", new JScrollPane(panel));
-    }
-
-    private void addProfessionalSummaryTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(BACKGROUND_COLOR);
-        summaryArea = new JTextArea(10, 30);
-        summaryArea.setFont(new Font("Arial", Font.PLAIN, 14));
-        summaryArea.setLineWrap(true);
-        summaryArea.setWrapStyleWord(true);
-        summaryArea.setBackground(INPUT_BACKGROUND);
-        summaryArea.setForeground(Color.WHITE);
-        summaryArea.setBorder(BorderFactory.createLineBorder(INPUT_BACKGROUND));
-        panel.add(new JScrollPane(summaryArea), BorderLayout.CENTER);
-
-        JLabel instruction = new JLabel("<html><font color='white'>Write 2-3 short, energetic sentences about how great you are. Mention the role and what you did. What were the big achievements? Describe your motivation and list your skills.</font></html>");
-        instruction.setFont(new Font("Arial", Font.PLAIN, 14));
-        instruction.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        panel.add(instruction, BorderLayout.NORTH);
-
-        tabbedPane.addTab("Professional Summary", panel);
-    }
-
-    private void saveResume() {
-        Resume resume = new Resume();
-        resume.setJobTitle(textFields.get("Job Title").getText());
-        resume.setFirstName(textFields.get("First Name").getText());
-        resume.setLastName(textFields.get("Last Name").getText());
-        resume.setEmail(textFields.get("Email").getText());
-        resume.setPhone(textFields.get("Phone").getText());
-        resume.setCountry(textFields.get("Country").getText());
-        resume.setCity(textFields.get("City").getText());
-        resume.setProfessionalSummary(summaryArea.getText());
-
-	    DatabaseConnection dao = new DatabaseConnection();
-	    try {
-		    dao.saveResume(resume);  // Now throws SQLException
-		    JOptionPane.showMessageDialog(this, "Resume saved successfully!");
-	    } catch (SQLException e) {
-		    JOptionPane.showMessageDialog(this, "Error saving resume: " + e.getMessage());
-		    e.printStackTrace();
-	    }}
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            MainWindow window = new MainWindow();
-            window.setVisible(true);
-        });
-    }}
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				new MainWindow().setVisible(true);
+			}
+		});
+	}
+}
